@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+
+{% block title %}Лента{% endblock %}
+{% block header %}Последние обновления на сайте{% endblock %}
+
+{% block content %}
+
+<main role="main" class="container">
+        <div class="row">
+
+                {% include 'profile_info.html' %}
+    
+                <div class="col-md-9">                
+                        <!-- Начало блока с отдельным постом --> 
+                        <div class="container">
+                                <h1>Публикации автора {{ author }}</h1>
+                                 <!-- Вывод ленты записей -->
+                                     {% for post in page %}
+                                       <!-- Вот он, новый include! -->
+                                         {% include "post_item.html" with post=post %}
+                                     {% endfor %}
+                        </div>
+
+                        <!-- Здесь постраничная навигация паджинатора -->
+                        {% if page.has_other_pages %}
+                                {% include "paginator.html" with items=page paginator=paginator%}
+                        {% endif %}
+                </div>
+        </div>
+</main>
+
+{% endblock %}
+
