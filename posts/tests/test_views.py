@@ -3,7 +3,7 @@ from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.test import TestCase, Client
 from django.urls import reverse
-from posts.models import Post, Group
+from posts.models import Post, Group, Follow, Comment
 
 
 User = get_user_model()
@@ -141,3 +141,45 @@ class PostsTestViews(TestCase):
         cache.touch(self.key, 0)
         new_response = self.authorized_client.get(reverse('index'))
         self.assertNotEqual(old_response.content, new_response.content)
+
+    def test_follow_authorized_user(self):
+        """ проверяем возможность пользователя подписаться и отписаться на автора """
+        count_follow = Follow.objects.count()
+        user_2 = User.objects.create_user(username='test_user')
+        authorized_user_2 = Client()
+        authorized_user_2.force_login(user_2)
+        url = reverse('profile_follow', args=[self.user])
+        response = authorized_user_2.get(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Follow.objects.count(), count_follow + 1)
+        url = reverse('profile_unfollow', args=[self.user])
+        response = authorized_user_2.get(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Follow.objects.count(), 0)
+
+    def test_follow_index(self):
+        """ првоеряем, что пост появляется только у подписанного пользователя """
+        user_2 = User.objects.create_user(username='test_user')
+        authorized_user_2 = Client()
+        authorized_user_2.force_login(user_2)
+        user_3 = User.objects.create_user(username='test_user_2')
+        authorized_user_3 = Client()
+        authorized_user_3.force_login(user_3)
+        url = reverse('profile_follow', args=[self.user])
+        response_user_2 = authorized_user_2.get(url, follow=True)
+        response_user_3 = authorized_user_3.get(reverse('follow_index'))
+        self.assertNotEqual(response_user_2, response_user_3)
+
+    def test_comment_authorized_user(self):
+        """ проверяем возможность авторизированного пользователя комментировать пост """
+        comment_count = Comment.objects.count()
+        url = reverse('add_comment', args=[self.user, self.post.id])
+        response = self.authorized_client.post(url, {'text': 'Это текст комментария'}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Comment.objects.count(), comment_count + 1)
+
+    def test_comment_unauthorized_user(self):
+        """ не авторизированный пользователь не может оставить комментарий """
+        url = reverse('add_comment', args=[self.user, self.post.id])
+        response = self.unauthorized_client.post(url, {'text': 'Это текст комментария'}, follow=True)
+        self.assertRedirects(response, reverse('login') + '?next=' + url, status_code=302, target_status_code=200)

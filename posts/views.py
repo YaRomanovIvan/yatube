@@ -51,7 +51,7 @@ def new_post(request):
     """
     if request.method != 'POST':
         return render(request, 'new.html', {'form':PostForm()})
-    form = PostForm(request.POST)
+    form = PostForm(request.POST, files=request.FILES or None)
     if not form.is_valid():
         return render(request, 'new.html', {'form':PostForm()})
     user = form.save(commit=False)
@@ -121,7 +121,7 @@ def post_edit(request, username, post_id):
         }
         context.update(info)
         return render(request, 'new.html', context)
-    form = PostForm(request.POST, instance=post)
+    form = PostForm(request.POST, files=request.FILES or None, instance=post)
     if not form.is_valid():
         context = {
             'post':post,

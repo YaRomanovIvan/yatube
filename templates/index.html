@@ -2,7 +2,8 @@
 {% block title %}Последние обновления {% endblock %}
 
 {% block content %}
-
+{% load cache %}
+{% cache 20 index_page %}
     <div class="container">
 
         {% include "menu.html" with index=True %}
@@ -18,5 +19,5 @@
         {% endif %}
 
     </div>
-
+{% endcache %} 
 {% endblock %}
