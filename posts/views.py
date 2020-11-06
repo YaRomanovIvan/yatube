@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
 
 from .forms import PostForm, CommentForm
-from .models import Post, Group, User, Follow
+from .models import Post, Group, User, Follow, Comment
 
 
 def page_not_found(request, exception):
@@ -148,11 +148,41 @@ def add_comment(request, username, post_id):
     return redirect('post', post.author, post_id)
 
 
+def delete_comment(request, comment_id, post_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+    post = get_object_or_404(Post, pk=post_id)
+    if comment.author != request.user:
+        return redirect('post', post.author, post.pk)
+    comment.delete()
+    return redirect('post', post.author, post.pk)
+
+
+def edit_comment(request, comment_id, post_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+    post = get_object_or_404(Post, pk=post_id)
+    if comment.author != request.user:
+        return redirect('post', post.author, post.pk)
+    if request.POST != 'POST':
+        form = CommentForm(instance=comment)
+        post_comments = post.comments.all()
+        info = profile_info(post.author, request.user)
+        context = {
+            'form': form,
+            'post': post,
+            'comments': post_comments
+        }
+        context.update(info)
+        return render(request, 'post.html', context)
+    form = CommentForm(request.POST, instance=comment)
+    if not form.is_valid():
+        return redirect('post', post.author, post.pk)
+    form.save()
+    return redirect('post', post.author, post.pk)
+
 @login_required
 def follow_index(request):
     # информация о текущем пользователе доступна в переменной request.user
-    user = User.objects.get(username=request.user)
-    author = Follow.objects.values('author').filter(user=user)
+    author = Follow.objects.values('author').filter(user=request.user)
     post = Post.objects.filter(author__in=author)
     paginator = Paginator(post, 10)
     page_number = request.GET.get('page')
