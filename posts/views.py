@@ -62,7 +62,7 @@ def new_post(request):
 
 def profile_info(_author, _user):
     author = get_object_or_404(User, username=_author)
-    follow = Follow.objects.filter(author=author, user=_user).exists()
+    follow = author.following.filter(user=_user.id).exists()
     following = author.following.count()
     follower = author.follower.count()
     post_cnt = author.posts.count()
@@ -71,7 +71,7 @@ def profile_info(_author, _user):
         'post_cnt': post_cnt,
         'follow': follow,
         'following': following,
-        'follower': follower
+        'follower': follower,
 
     }
     return context
