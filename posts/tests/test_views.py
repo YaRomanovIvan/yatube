@@ -1,8 +1,12 @@
+import os
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.urls import reverse
+from PIL import Image
+
 from posts.models import Post, Group, Follow, Comment
 
 
@@ -64,13 +68,19 @@ class PostsTestViews(TestCase):
         ]
         
         url = reverse('post_edit', args=[self.user, self.post.id])
-        with open('posts/test_image.jpg', 'rb') as img:
-            context = {
-                'text': 'Это текст публикации',
-                'group': self.group_2.id,
-                'image': img
-            }
-            update_post = self.authorized_client.post(url, context, follow=True)
+        img = Image.new('RGB', (50, 50), 'white')    
+        img.save('posts/tests/test_image.jpeg')
+        image = SimpleUploadedFile(
+            name='test_image.jpeg', 
+            content=open('posts/tests/test_image.jpeg', 'rb').read(), 
+            content_type='image/jpeg'
+        )
+        context = {
+            'text': 'Это текст публикации',
+            'group': self.group_2.id,
+            'image': image,
+        }
+        update_post = self.authorized_client.post(url, context, follow=True)
 
         self.assertEqual(update_post.status_code, 200)
         self.assertEqual(update_post.context['post'].text, 'Это текст публикации')
@@ -80,6 +90,8 @@ class PostsTestViews(TestCase):
         for url in url_reverse:
             response = self.authorized_client.get(url)
             self.update_commit_test(response)
+        
+        os.remove('posts/tests/test_image.jpeg')
 
     def update_commit_test(self, response):
         self.assertEqual(response.status_code, 200)
@@ -95,14 +107,16 @@ class PostsTestViews(TestCase):
             reverse('index'),
         ]
 
-        with open('posts/test_image.jpg', 'rb') as img:
-            context = {
-                'text': 'Это текст публикации',
-                'group': self.group_1.id,
-                'image': img
-            }
-            url = reverse('post_edit', args=[self.user, self.post.id])
-            update_post = self.authorized_client.post(url, context, follow=True)
+        img = Image.new('RGB', (50, 50), 'white')    
+        img.save('posts/tests/test_image.jpeg')
+        image = SimpleUploadedFile(name='test_image.jpeg', content=open('posts/tests/test_image.jpeg', 'rb').read(), content_type='image/jpeg')
+        context = {
+            'text': 'Это текст публикации',
+            'group': self.group_1.id,
+            'image': image,
+        }
+        url = reverse('post_edit', args=[self.user, self.post.id])
+        update_post = self.authorized_client.post(url, context, follow=True)
 
         self.assertEqual(update_post.status_code, 200)
         self.assertContains(update_post, '<img')
@@ -113,23 +127,29 @@ class PostsTestViews(TestCase):
             response = self.authorized_client.get(url)
             self.img_test(response)
 
+        os.remove('posts/tests/test_image.jpeg')
+
     def img_test(self, response):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '<img')
 
     def test_loading_not_images(self):
         """ проверяем механизм защиты от загрузки файлов не-графических форматов """
-        with open('posts/admin.py', 'rb') as img:
-            context = {
-                'text': 'Это текст публикации',
-                'group': self.group_1.id,
-                'image': img
-            }
-            url = reverse('new_post')
-            response = self.authorized_client.post(url, context, follow=True)
+        img = Image.new('RGB', (50, 50), 'white')    
+        img.save('posts/tests/test_image.jpeg')
+        image = SimpleUploadedFile(name='test_image.jpeg', content=open('posts/tests/test_image.jpeg', 'rb').read(), content_type='image/jpeg')
+        context = {
+            'text': 'Это текст публикации',
+            'group': self.group_1.id,
+            'image': image,
+        }
+        url = reverse('new_post')
+        response = self.authorized_client.post(url, context, follow=True)
         current_posts_count = Post.objects.count()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Post.objects.count(), current_posts_count)
+
+        os.remove('posts/tests/test_image.jpeg')
     
     def test_cache_index(self):
         """проверка работы кэширования страницы index"""
