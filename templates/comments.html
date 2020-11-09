@@ -28,8 +28,6 @@
         </h5>
         <p>{{ item.text | linebreaksbr }}</p>
         <small class="text-muted">{{ item.created }}</small>
-        {% if item.author == user %}<small><a href="{% url 'edit_comment' item.pk post.pk%}">Редактировать</a></small>{% endif %}
-        {% if item.author == user %}<small><a href="{% url 'delete_comment' item.pk post.pk%}">Удалить</a></small>{% endif %}
     </div>
 </div>
 {% endfor %}

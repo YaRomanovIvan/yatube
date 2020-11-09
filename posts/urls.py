@@ -10,8 +10,6 @@ urlpatterns = [
     path("<str:username>/follow/", views.profile_follow, name="profile_follow"),
     path("<str:username>/unfollow/", views.profile_unfollow, name="profile_unfollow"),
     path("<username>/<int:post_id>/comment", views.add_comment, name="add_comment"),
-    path("<int:comment_id>/<int:post_id>/edit_comment", views.edit_comment, name="edit_comment"),
-    path("<int:comment_id>/<int:post_id>/delete_comment", views.delete_comment, name="delete_comment"),
     path('<str:username>/', views.profile, name='profile'),
     path('<str:username>/<int:post_id>/', views.post_view, name='post'),
     path(

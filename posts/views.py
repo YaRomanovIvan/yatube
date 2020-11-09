@@ -130,7 +130,7 @@ def post_edit(request, username, post_id):
         return render(request, 'post.html', context)
     form.save()
     return redirect('post', username=f'{username}', post_id=f'{post_id}')
-    
+
 
 @login_required
 def add_comment(request, username, post_id):
@@ -147,37 +147,6 @@ def add_comment(request, username, post_id):
     comment.save()
     return redirect('post', post.author, post_id)
 
-
-def delete_comment(request, comment_id, post_id):
-    comment = get_object_or_404(Comment, pk=comment_id)
-    post = get_object_or_404(Post, pk=post_id)
-    if comment.author != request.user:
-        return redirect('post', post.author, post.pk)
-    comment.delete()
-    return redirect('post', post.author, post.pk)
-
-
-def edit_comment(request, comment_id, post_id):
-    comment = get_object_or_404(Comment, pk=comment_id)
-    post = get_object_or_404(Post, pk=post_id)
-    if comment.author != request.user:
-        return redirect('post', post.author, post.pk)
-    if request.POST != 'POST':
-        form = CommentForm(instance=comment)
-        post_comments = post.comments.all()
-        info = profile_info(post.author, request.user)
-        context = {
-            'form': form,
-            'post': post,
-            'comments': post_comments
-        }
-        context.update(info)
-        return render(request, 'post.html', context)
-    form = CommentForm(request.POST, instance=comment)
-    if not form.is_valid():
-        return redirect('post', post.author, post.pk)
-    form.save()
-    return redirect('post', post.author, post.pk)
 
 @login_required
 def follow_index(request):
@@ -201,7 +170,7 @@ def profile_follow(request, username):
     if author == user:
         return redirect('index')
 
-    if Follow.objects.filter(author=author, user=user).exists():
+    if author.following.filter(user=request.user.id).exists():
         return redirect('index')
     follow = Follow.objects.create(
         author=author,
@@ -218,3 +187,4 @@ def profile_unfollow(request, username):
     follow = user.follower.filter(author=author)
     follow.delete()
     return redirect('index')
+    

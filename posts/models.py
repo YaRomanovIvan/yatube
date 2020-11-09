@@ -120,3 +120,6 @@ class Follow(models.Model):
 
     class Meta:
         verbose_name = 'Система подписки'
+    
+    def __str__(self):
+        return f'Автор: {self.author}, Пользователь: {self.user}'
