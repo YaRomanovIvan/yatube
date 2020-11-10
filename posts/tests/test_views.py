@@ -20,6 +20,9 @@ class PostsTestViews(TestCase):
         cls.user = User.objects.create_user(username='test_admin')
         cls.authorized_client = Client()        
         cls.authorized_client.force_login(cls.user) 
+        cls.user_2 = User.objects.create_user(username='test_admin_2')
+        cls.authorized_user_2 = Client()
+        cls.authorized_user_2.force_login(cls.user_2)
         cls.unauthorized_client = Client()
         cls.key = make_template_fragment_key('index_page')
         cls.group_1 = Group.objects.create(
@@ -106,16 +109,17 @@ class PostsTestViews(TestCase):
             reverse('group_posts', args=[self.group_1.slug]),
             reverse('index'),
         ]
+        url = reverse('post_edit', args=[self.user, self.post.id])
 
         img = Image.new('RGB', (50, 50), 'white')    
         img.save('posts/tests/test_image.jpeg')
         image = SimpleUploadedFile(name='test_image.jpeg', content=open('posts/tests/test_image.jpeg', 'rb').read(), content_type='image/jpeg')
+
         context = {
             'text': 'Это текст публикации',
             'group': self.group_1.id,
             'image': image,
         }
-        url = reverse('post_edit', args=[self.user, self.post.id])
         update_post = self.authorized_client.post(url, context, follow=True)
 
         self.assertEqual(update_post.status_code, 200)
@@ -135,21 +139,14 @@ class PostsTestViews(TestCase):
 
     def test_loading_not_images(self):
         """ проверяем механизм защиты от загрузки файлов не-графических форматов """
-        img = Image.new('RGB', (50, 50), 'white')    
-        img.save('posts/tests/test_image.jpeg')
-        image = SimpleUploadedFile(name='test_image.jpeg', content=open('posts/tests/test_image.jpeg', 'rb').read(), content_type='image/jpeg')
+        image = SimpleUploadedFile(name='admin.py', content=open('posts/admin.py', 'rb').read())
         context = {
             'text': 'Это текст публикации',
             'group': self.group_1.id,
             'image': image,
         }
-        url = reverse('new_post')
-        response = self.authorized_client.post(url, context, follow=True)
-        current_posts_count = Post.objects.count()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(Post.objects.count(), current_posts_count)
-
-        os.remove('posts/tests/test_image.jpeg')
+        response = self.authorized_client.post(reverse('new_post'), context, follow=True)
+        self.assertFormError(response, 'form', 'image', 'Загрузите правильное изображение. Файл, который вы загрузили, поврежден или не является изображением.')
     
     def test_cache_index(self):
         """проверка работы кэширования страницы index"""
@@ -163,19 +160,24 @@ class PostsTestViews(TestCase):
         self.assertNotEqual(old_response.content, new_response.content)
 
     def test_follow_authorized_user(self):
-        """ проверяем возможность пользователя подписаться и отписаться на автора """
+        """ проверяем возможность пользователя подписаться """
         count_follow = Follow.objects.count()
-        user_2 = User.objects.create_user(username='test_user')
-        authorized_user_2 = Client()
-        authorized_user_2.force_login(user_2)
         url = reverse('profile_follow', args=[self.user])
-        response = authorized_user_2.get(url, follow=True)
+        response = self.authorized_user_2.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Follow.objects.count(), count_follow + 1)
+
+    def test_unfollow_authorized_user(self):
+        """ проверяем возможность пользователя отписаться от автора """
+        Follow.objects.create(
+            user = self.user_2,
+            author = self.user,
+        )
+        count_follow = Follow.objects.count()
         url = reverse('profile_unfollow', args=[self.user])
-        response = authorized_user_2.get(url, follow=True)
+        response = self.authorized_user_2.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Follow.objects.count(), 0)
+        self.assertEqual(Follow.objects.count(), count_follow - 1)
 
     def test_follow_index(self):
         """ првоеряем, что пост появляется только у подписанного пользователя """

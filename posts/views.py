@@ -50,10 +50,11 @@ def new_post(request):
     Создает новый пост
     """
     if request.method != 'POST':
-        return render(request, 'new.html', {'form':PostForm()})
+        return render(request, 'new.html', {'form': PostForm()})
     form = PostForm(request.POST, files=request.FILES or None)
     if not form.is_valid():
-        return render(request, 'new.html', {'form':PostForm()})
+        form = PostForm(request.POST, files=request.FILES or None)
+        return render(request, 'new.html', {'form': form})
     user = form.save(commit=False)
     user.author = request.user
     user.save()
@@ -177,14 +178,16 @@ def profile_follow(request, username):
         user=user
     )
     follow.save()
-    return redirect('follow_index')
+    return redirect('profile', author)
 
 
 @login_required
 def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
     user = get_object_or_404(User, username=request.user)
-    follow = user.follower.filter(author=author)
-    follow.delete()
-    return redirect('index')
+    if user.follower.filter(author=author).exists():
+        follow = user.follower.filter(author=author)
+        follow.delete()
+        return redirect('profile', author)
+    return redirect('profile', author)
     
