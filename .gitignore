@@ -19,5 +19,6 @@ static/
 posts/static/
 media/
 sent_emails/
+.vscode/
 
 db.sqlite3
