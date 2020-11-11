@@ -5,18 +5,18 @@
 {% block header %}{{ group.title }}{% endblock %}
 
 {% block content %}
-    <h1>{{ group.title }}</h1>
-    
-    <p>
-        {{ group.description }}
-    </p>
-    
-    {% for post in page %}
-        {% include "includes/post_item.html" with post=post %}
-    {% endfor %}
-    
-    {% if page.has_other_pages %}
-        {% include "includes/paginator.html" with items=page paginator=paginator%}
-    {% endif %}
-    
+<h1>{{ group.title }}</h1>
+
+<p>
+    {{ group.description }}
+</p>
+
+{% for post in page %}
+{% include "includes/post_item.html" with post=post %}
+{% endfor %}
+
+{% if page.has_other_pages %}
+{% include "includes/paginator.html" with items=page paginator=paginator%}
+{% endif %}
+
 {% endblock %}
