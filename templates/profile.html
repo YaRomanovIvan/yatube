@@ -15,6 +15,7 @@
                         <!-- Начало блока с отдельным постом --> 
                         <div class="container">
                                 <h1>Публикации автора {{ author }}</h1>
+                                {% include 'includes/message.html' %}
                                  <!-- Вывод ленты записей -->
                                      {% for post in page %}
                                        <!-- Вот он, новый include! -->

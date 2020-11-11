@@ -9,7 +9,9 @@ urlpatterns = [
     path('group/<slug:slug>/', views.group_posts, name='group_posts'),
     path('<str:username>/follow/', views.profile_follow, name='profile_follow'),
     path('<str:username>/unfollow/', views.profile_unfollow, name='profile_unfollow'),
-    path('<str:username>/<int:post_id>/comment', views.add_comment, name='add_comment'),
+    path('<str:username>/<int:post_id>/comment/', views.add_comment, name='add_comment'),
+    path('<int:comment_id>/<int:post_id>/comment_edit/', views.comment_edit, name='comment_edit'),
+    path('<int:comment_id>/<int:post_id>/delete_comment/', views.delete_comment, name='delete_comment'),
     path('<str:username>/', views.profile, name='profile'),
     path('<str:username>/<int:post_id>/', views.post_view, name='post'),
     path(

@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404, redirect
@@ -58,6 +59,11 @@ def new_post(request):
     user = form.save(commit=False)
     user.author = request.user
     user.save()
+    messages.add_message(
+        request,
+        messages.SUCCESS,
+        'Запись усешно создана!'
+    )
     return redirect('index')
 
 
@@ -150,6 +156,51 @@ def add_comment(request, username, post_id):
 
 
 @login_required
+def delete_comment(request, comment_id, post_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+    post = get_object_or_404(Post, pk=post_id)
+    if comment.author != request.user:
+        return redirect('post', post.author, post.pk)
+    comment.delete()
+    messages.add_message(
+        request,
+        messages.INFO,
+        'Комментарий удален!'
+    )
+    return redirect('post', post.author, post.pk)
+
+
+@login_required
+def comment_edit(request, comment_id, post_id):
+    edit_comment = get_object_or_404(Comment, pk=comment_id)
+    post = get_object_or_404(Post, pk=post_id)
+    if edit_comment.author != request.user:
+        return redirect('post', post.author, post.pk)
+    if request.method != 'POST':
+        form = CommentForm(instance=edit_comment)
+        post_comments = post.comments.all()
+        info = profile_info(post.author, request.user)
+        context = {
+            'form': form,
+            'post': post,
+            'comments': post_comments,
+            'edit_comment': edit_comment,
+        }
+        context.update(info)
+        return render(request, 'post.html', context)
+    form = CommentForm(request.POST, instance=edit_comment)
+    if not form.is_valid():
+        return redirect('post', post.author, post.pk)
+    form.save()
+    messages.add_message(
+        request,
+        messages.INFO,
+        'Комментарий отредактирован!'
+    )
+    return redirect('post', post.author, post.pk)
+
+
+@login_required
 def follow_index(request):
     # информация о текущем пользователе доступна в переменной request.user
     author = Follow.objects.values('author').filter(user=request.user)
@@ -178,6 +229,11 @@ def profile_follow(request, username):
         user=user
     )
     follow.save()
+    messages.add_message(
+        request,
+        messages.SUCCESS,
+        f'Вы подписались на автора {username}!'
+    )
     return redirect('profile', author)
 
 
@@ -188,6 +244,11 @@ def profile_unfollow(request, username):
     if user.follower.filter(author=author).exists():
         follow = user.follower.filter(author=author)
         follow.delete()
+        messages.add_message(
+            request,
+            messages.WARNING,
+            f'Вы отписались от автора {username}!'
+        )
         return redirect('profile', author)
     return redirect('profile', author)
     
