@@ -6,6 +6,7 @@ User = get_user_model()
 
 
 class Group(models.Model):
+    """ модель группы """
     title = models.CharField(
         max_length=200,
         verbose_name="Заголовок",
@@ -26,6 +27,7 @@ class Group(models.Model):
 
 
 class Post(models.Model):
+    """ модель публикации """
     text = models.TextField(
         verbose_name="Текст",
     )
@@ -67,6 +69,7 @@ class Post(models.Model):
 
 
 class Comment(models.Model):
+    """ модель комментрия """
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
@@ -98,6 +101,7 @@ class Comment(models.Model):
 
 
 class Follow(models.Model):
+    """ модель подписки """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

@@ -8,16 +8,17 @@ from .models import Post, Group, User, Follow, Comment
 
 
 def page_not_found(request, exception):
-    # Переменная exception содержит отладочную информацию,
-    # выводить её в шаблон пользователской страницы 404 мы не станем
+    """ ошибка 404 """
     return render(request, "misc/404.html", {"path": request.path}, status=404)
 
 
 def server_error(request):
+    """ отображение 500 ошибки сервера """
     return render(request, "misc/500.html", status=500)
 
 
 def index(request):
+    """ главная страница сайта. Вывод всех публикаций """
     post_list = Post.objects.all()
     paginator = Paginator(post_list, 10)
 
@@ -27,6 +28,7 @@ def index(request):
 
 
 def group_posts(request, slug):
+    """ страница группы. Вывод всех публикаций группы. """
     group = get_object_or_404(Group, slug=slug)
     posts = group.posts.all()
     paginator = Paginator(posts, 10)
@@ -57,6 +59,7 @@ def new_post(request):
 
 
 def profile_info(_author, _user):
+    """ функция собирающая всю информацию по пользователе """
     author = get_object_or_404(User, username=_author)
     follow = author.following.filter(user=_user.id).exists()
     following = author.following.count()
@@ -73,6 +76,9 @@ def profile_info(_author, _user):
 
 
 def profile(request, username):
+    """ страница конкретного пользователя. Отображаются 
+    все публикации этого пользователя
+     """
     info = profile_info(username, request.user)
     author_post = info["author"].posts.all()
     paginator = Paginator(author_post, 10)
@@ -87,6 +93,7 @@ def profile(request, username):
 
 
 def post_view(request, username, post_id):
+    """ конкретная публикация. Ко всему прочему отображается форма комментария """
     info = profile_info(username, request.user)
     post = info["author"].posts.get(pk=post_id)
     comments = post.comments.all()
@@ -101,6 +108,7 @@ def post_view(request, username, post_id):
 
 @login_required
 def post_edit(request, username, post_id):
+    """ Страница редактирования поста. Использует форму для создания поста. """
     info = profile_info(username, request.user)
     post = info["author"].posts.get(pk=post_id)
     if request.user != post.author:
@@ -130,6 +138,7 @@ def post_edit(request, username, post_id):
 
 @login_required
 def add_comment(request, username, post_id):
+    """ Создание комментария.  """
     post = get_object_or_404(Post, pk=post_id)
     author = get_object_or_404(User, username=username)
     if request.method != "POST":
@@ -146,6 +155,7 @@ def add_comment(request, username, post_id):
 
 @login_required
 def delete_comment(request, comment_id, post_id):
+    """ удалениек комментария """
     comment = get_object_or_404(Comment, pk=comment_id)
     post = get_object_or_404(Post, pk=post_id)
     if comment.author != request.user:
@@ -157,6 +167,7 @@ def delete_comment(request, comment_id, post_id):
 
 @login_required
 def comment_edit(request, comment_id, post_id):
+    """ редактирование комментария """
     edit_comment = get_object_or_404(Comment, pk=comment_id)
     post = get_object_or_404(Post, pk=post_id)
     if edit_comment.author != request.user:
@@ -183,6 +194,7 @@ def comment_edit(request, comment_id, post_id):
 
 @login_required
 def follow_index(request):
+    """ страница избранных(подписанных) авторов """
     # информация о текущем пользователе доступна в переменной request.user
     author = Follow.objects.values("author").filter(user=request.user)
     post = Post.objects.filter(author__in=author)
@@ -198,6 +210,7 @@ def follow_index(request):
 
 @login_required
 def profile_follow(request, username):
+    """ подписка на автора """
     author = get_object_or_404(User, username=username)
     user = get_object_or_404(User, username=request.user)
     if author == user:
@@ -215,6 +228,7 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
+    """ отписка от автора """
     author = get_object_or_404(User, username=username)
     user = get_object_or_404(User, username=request.user)
     if user.follower.filter(author=author).exists():
